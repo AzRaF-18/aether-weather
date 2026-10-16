@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER - Ultimate Weather Experience</title>
+    <!-- App Icon for iPhone Home Screen -->
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    <!-- PWA Meta Tags for iPhone & Android Home Screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AETHER">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
+
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background: #000000;
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+            min-height: 100vh;
+            transition: background 1s ease;
+        }
+
+        .brand-font {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 0.15em;
+            font-weight: 900;
+        }
+
+        .blank-main-tile {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            position: relative;
+            z-index: 2;
+        }
+
+        .frosted-glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        header, button, input {
+            position: relative;
+            z-index: 50 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Cartoon Sun */
+        .cartoon-sun {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle, #ffe600 35%, #ff6600 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 35px #ff9900;
+            z-index: 1;
+        }
+
+        /* Half Sun Setting */
+        .half-sun-setting {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            width: 55px;
+            height: 28px;
+            background: radial-gradient(circle, #ffcc00 30%, #EF4444 100%);
+            border-top-left-radius: 55px;
+            border-top-right-radius: 55px;
+            box-shadow: 0 0 40px #EF4444;
+            z-index: 1;
+        }
+
+        /* Moon with Clouds Passing Over */
+        .cartoon-moon-container {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .cartoon-moon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 45px;
+            height: 45px;
+            background: #f4f4f4;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+        }
+        .cartoon-moon::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            width: 45px;
+            height: 45px;
+            background: #303234;
+            border-radius: 50%;
+        }
+
+        /* Cartoon Clouds Animation Layer */
+        .cloud-system {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none !important;
+            overflow: hidden;
+            z-index: 4;
+        }
+
+        .cartoon-cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 100px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+            animation: driftClouds 25s linear infinite;
+        }
+        .cartoon-cloud::before, .cartoon-cloud::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+        }
+
+        .cloud-sm { width: 55px; height: 22px; }
+        .cloud-sm::before { width: 26px; height: 26px; top: -13px; left: 7px; }
+        .cloud-sm::after { width: 32px; height: 32px; top: -17px; left: 24px; }
+
+        .cloud-md { width: 85px; height: 32px; }
+        .cloud-md::before { width: 38px; height: 38px; top: -18px; left: 10px; }
+        .cloud-md::after { width: 46px; height: 46px; top: -24px; left: 35px; }
+
+        @keyframes driftClouds {
+            0% { transform: translateX(-150px); }
+            100% { transform: translateX(380px); }
+        }
+
+        #suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 6px;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            z-index: 100 !important;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 10px 14px;
+            font-size: 11px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .suggestion-item:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body id="app-body" class="flex flex-col justify-between p-4 md:p-6 pb-12">
+
+    <!-- App Header -->
+    <header class="flex flex-col space-y-3 frosted-glass px-5 py-4 rounded-3xl max-w-md mx-auto w-full">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl tracking-widest text-red-600 font-black brand-font">AETHER</h1>
+            <div id="location-status" class="text-[11px] font-semibold px-3 py-1 rounded-full bg-white/5 border border-white/10 cursor-pointer" onclick="triggerLiveGPS()">
+                📍 Live GPS Active
+            </div>
+        </div>
+        <div class="relative">
+            <input type="text" id="city-search" placeholder="Search city or neighborhood..." autocomplete="off" class="w-full text-xs bg-black/40 border border-white/15 rounded-xl px-4 py-2.5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500" />
+            <div id="suggestions-box"></div>
+        </div>
+        <div class="flex space-x-2 overflow-x-auto pb-1 text-xs">
+            <button onclick="triggerLiveGPS()" class="px-3 py-1 rounded-full bg-red-600 text-white font-semibold whitespace-nowrap cursor-pointer">Current GPS</button>
+            <button onclick="fetchWeather(23.7104, 90.4184, 'Swamibagh, Dhaka, Bangladesh')" class="px-3 py-1 rounded-full frosted-glass text-white whitespace-nowrap cursor-pointer">Swamibagh</button>
+            <button onclick="fetchWeather(40.7128, -74.0060, 'New York, US')" class="px-3 py-1 rounded-full frosted-glass text-white whitespace-nowrap cursor-pointer">New York</button>
+            <button onclick="fetchWeather(51.5074, -0.1278, 'London, UK')" class="px-3 py-1 rounded-full frosted-glass text-white whitespace-nowrap cursor-pointer">London</button>
+            <button onclick="fetchWeather(35.6762, 139.6503, 'Tokyo, Japan')" class="px-3 py-1 rounded-full frosted-glass text-white whitespace-nowrap cursor-pointer">Tokyo</button>
+        </div>
+    </header>
+
+    <!-- Main Weather Display -->
+    <main class="flex flex-col items-center justify-center text-center my-4 max-w-md mx-auto w-full">
+        <div class="blank-main-tile p-6 md:p-8 w-full relative">
+            <div id="sun-container"></div>
+            <div id="cloud-layer" class="cloud-system"></div>
+
+            <div id="current-date" class="text-xs font-bold mb-1 relative z-20">--</div>
+            <h2 id="city-name" class="text-2xl md:text-3xl font-black tracking-wide mb-0.5 relative z-20 brand-font">Swamibagh, Dhaka</h2>
+            <p id="weather-desc" class="text-xs uppercase tracking-[0.25em] font-bold mb-3 relative z-20">Loading Weather...</p>
+            
+            <div class="flex flex-col items-center justify-center my-2 relative z-20">
+                <div class="flex items-baseline space-x-1">
+                    <span id="temperature" class="text-7xl md:text-8xl font-black tracking-tighter text-red-600 drop-shadow-[0_0_25px_rgba(239,68,68,0.4)]">--</span>
+                    <span id="temp-unit-label" class="text-3xl font-bold text-red-500">°C</span>
+                </div>
+                <button onclick="toggleTempUnit()" class="mt-2 px-3 py-1 rounded-full bg-red-600 text-white text-[11px] font-bold tracking-wider shadow-lg hover:bg-red-500 cursor-pointer">
+                    SWITCH: <span id="unit-btn-text">°C / °F</span>
+                </button>
+            </div>
+            
+            <div id="coords-display" class="text-[10px] font-mono tracking-widest mb-6 relative z-20 opacity-80">COORDS: 23.71, 90.42</div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs relative z-20">
+                <div class="frosted-glass p-3 rounded-2xl">
+                    <span class="block mb-1 font-bold text-yellow-400">💧 HUMIDITY</span>
+                    <span id="humidity" class="text-sm font-bold">--%</span>
+                </div>
+                <div class="frosted-glass p-3 rounded-2xl">
+                    <span class="block mb-1 font-bold text-yellow-400">💨 WIND SPEED</span>
+                    <span id="wind" class="text-sm font-bold">-- m/s</span>
+                </div>
+                <div class="frosted-glass p-3 rounded-2xl">
+                    <span class="block mb-1 font-bold text-yellow-400">🌡️ FEELS LIKE</span>
+                    <span id="feels-like" class="text-sm font-bold">--°C</span>
+                </div>
+                <div class="frosted-glass p-3 rounded-2xl">
+                    <span class="block mb-1 font-bold text-yellow-400">🔽 AIR PRESSURE</span>
+                    <span id="pressure" class="text-sm font-bold">-- hPa</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Hourly Forecast Tile -->
+    <section class="max-w-md mx-auto w-full frosted-glass p-5 rounded-3xl mb-4 relative z-20">
+        <h3 class="text-xs uppercase tracking-widest font-bold mb-3 text-yellow-400">⏰ Hourly Forecast</h3>
+        <div id="hourly-container" class="flex space-x-3 overflow-x-auto pb-2"></div>
+    </section>
+
+    <!-- 7-Day Forecast Tile -->
+    <section class="max-w-md mx-auto w-full frosted-glass p-5 rounded-3xl relative z-20">
+        <h3 class="text-xs uppercase tracking-widest font-bold mb-3 text-yellow-400">📅 7-Day Forecast</h3>
+        <div id="weekly-container" class="space-y-2 text-xs"></div>
+    </section>
+
+    <!-- Script Engine -->
+    <script>
+        let currentTempC = 0;
+        let feelsLikeC = 0;
+        let hourlyTempsC = [];
+        let dailyMaxC = [];
+        let dailyMinC = [];
+        let isFahrenheit = false;
+
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        function updateDynamicBackground(isDay) {
+            const body = document.getElementById('app-body');
+            const now = new Date();
+            const timeInMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const isSkyBlueTime = isDay && (timeInMinutes >= 420 && timeInMinutes <= 930);
+            const isBeforeSunsetTime = timeInMinutes >= 960 && timeInMinutes <= 1160;
+            const isSunsetTime = timeInMinutes >= 1170 && timeInMinutes <= 1220;
+            const isAfterSunsetTime = timeInMinutes >= 1308 && timeInMinutes <= 1415;
+            const isNightCloudyTime = timeInMinutes >= 1200 && timeInMinutes <= 1430;
+            const isMidnightTime = timeInMinutes >= 0 && timeInMinutes <= 270;
+
+            const isLightBackground = isSkyBlueTime;
+            document.getElementById('city-name').style.color = isLightBackground ? '#000000' : '#ffffff';
+            document.getElementById('current-date').style.color = isLightBackground ? '#1e3a8a' : '#fde047';
+            document.getElementById('weather-desc').style.color = isLightBackground ? '#b91c1c' : '#f87171';
+            document.getElementById('coords-display').style.color = isLightBackground ? '#1e3a8a' : '#fde047';
+
+            if (isSkyBlueTime) {
+                body.style.background = 'linear-gradient(180deg, #87CEEB 0%, #1e90ff 50%, #000000 100%)';
+            } else if (isBeforeSunsetTime) {
+                body.style.background = 'linear-gradient(180deg, #FFFF00 0%, #F97316 60%, #000000 100%)';
+            } else if (isSunsetTime) {
+                body.style.background = 'linear-gradient(180deg, #EF4444 0%, #F97316 60%, #000000 100%)';
+            } else if (isAfterSunsetTime) {
+                body.style.background = 'linear-gradient(180deg, #000080 0%, #000000 100%)';
+            } else if (isNightCloudyTime) {
+                body.style.background = '#303234';
+            } else if (isMidnightTime) {
+                body.style.background = '#08113B';
+            } else {
+                body.style.background = '#000000';
+            }
+        }
+
+        function setupVisualElements(isDay) {
+            const sunContainer = document.getElementById('sun-container');
+            const cloudLayer = document.getElementById('cloud-layer');
+            sunContainer.innerHTML = '';
+            cloudLayer.innerHTML = '';
+
+            const now = new Date();
+            const timeInMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            const isSkyBlueTime = isDay && (timeInMinutes >= 420 && timeInMinutes <= 930);
+            const isBeforeSunsetTime = timeInMinutes >= 960 && timeInMinutes <= 1160;
+            const isSunsetTime = timeInMinutes >= 1170 && timeInMinutes <= 1220;
+            const isNightCloudyTime = timeInMinutes >= 1200 && timeInMinutes <= 1430;
+
+            if (isSkyBlueTime || isBeforeSunsetTime) {
+                const sun = document.createElement('div');
+                sun.className = 'cartoon-sun';
+                sunContainer.appendChild(sun);
+            } else if (isSunsetTime) {
+                const halfSun = document.createElement('div');
+                halfSun.className = 'half-sun-setting';
+                sunContainer.appendChild(halfSun);
+            } else if (isNightCloudyTime) {
+                const moonContainer = document.createElement('div');
+                moonContainer.className = 'cartoon-moon-container';
+                const moon = document.createElement('div');
+                moon.className = 'cartoon-moon';
+                moonContainer.appendChild(moon);
+                sunContainer.appendChild(moonContainer);
+            }
+
+            const cloudCount = isNightCloudyTime ? 4 : 3;
+            const cloudTypes = ['cloud-sm', 'cloud-md'];
+
+            for (let i = 0; i < cloudCount; i++) {
+                const cloud = document.createElement('div');
+                const type = cloudTypes[Math.floor(Math.random() * cloudTypes.length)];
+                cloud.className = `cartoon-cloud ${type}`;
+                cloud.style.top = `${20 + (i * 35)}px`;
+                cloud.style.animationDelay = `${i * -5}s`;
+                cloudLayer.appendChild(cloud);
+            }
+        }
+
+        function fetchWeather(lat, lon, customName = null) {
+            document.getElementById('coords-display').innerText = `COORDS: ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            
+            if (customName) {
+                document.getElementById('city-name').innerText = customName;
+            } else {
+                // High precision neighborhood reverse geocoding with fallback
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=en`)
+                    .then(res => res.json())
+                    .then(geo => {
+                        const addr = geo.address || {};
+                        const neighborhood = addr.suburb || addr.neighbourhood || addr.city_district || addr.residential || addr.quarter || "";
+                        const city = addr.city || addr.town || addr.village || addr.state || "Dhaka";
+                        const country = addr.country || "Bangladesh";
+                        
+                        let displayName = neighborhood ? `${neighborhood}, ${city}` : city;
+                        if (!displayName.includes(country)) displayName += `, ${country}`;
+                        document.getElementById('city-name').innerText = displayName;
+                    })
+                    .catch(() => {
+                        document.getElementById('city-name').innerText = "Swamibagh, Dhaka, Bangladesh";
+                    });
+            }
+
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m&daily=temperature_2m_max,temperature_2m_min`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.current) {
+                        currentTempC = data.current.temperature_2m;
+                        feelsLikeC = data.current.apparent_temperature;
+                        hourlyTempsC = data.hourly?.temperature_2m || [];
+                        dailyMaxC = data.daily?.temperature_2m_max || [];
+                        dailyMinC = data.daily?.temperature_2m_min || [];
+
+                        updateDynamicBackground(data.current.is_day === 1);
+                        setupVisualElements(data.current.is_day === 1);
+                        renderUI(data.current);
+                        document.getElementById('location-status').innerText = "📍 Live GPS Active";
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('location-status').innerText = "⚠️ Network Error";
+                });
+        }
+
+        function renderUI(current) {
+            const tempVal = isFahrenheit ? (currentTempC * 9/5) + 32 : currentTempC;
+            const feelsVal = isFahrenheit ? (feelsLikeC * 9/5) + 32 : feelsLikeC;
+            const unit = isFahrenheit ? '°F' : '°C';
+
+            document.getElementById('temperature').innerText = Math.round(tempVal);
+            document.getElementById('temp-unit-label').innerText = unit;
+            document.getElementById('humidity').innerText = `${current.relative_humidity_2m}%`;
+            document.getElementById('wind').innerText = `${current.wind_speed_10m} m/s`;
+            document.getElementById('feels-like').innerText = `${Math.round(feelsVal)}${unit}`;
+            document.getElementById('pressure').innerText = `${current.surface_pressure} hPa`;
+            document.getElementById('weather-desc').innerText = current.is_day ? "☀️ CLEAR DAY" : "🌙 NIGHT SKY";
+
+            // Hourly
+            const hContainer = document.getElementById('hourly-container');
+            hContainer.innerHTML = '';
+            const startHour = new Date().getHours();
+            for (let i = startHour; i < startHour + 12; i++) {
+                const tRaw = hourlyTempsC[i] !== undefined ? hourlyTempsC[i] : currentTempC;
+                const t = Math.round(isFahrenheit ? (tRaw * 9/5) + 32 : tRaw);
+                const h12 = (i % 24) % 12 === 0 ? 12 : (i % 24) % 12;
+                const ampm = (i % 24) >= 12 ? 'PM' : 'AM';
+                
+                const card = document.createElement('div');
+                card.className = 'frosted-glass p-3 rounded-2xl flex flex-col items-center min-w-[75px] text-center';
+                card.innerHTML = `<span class="text-yellow-400 text-[10px]">${i === startHour ? 'Now' : h12 + ' ' + ampm}</span><span class="text-red-500 my-1">🌡️</span><span class="font-bold text-sm">${t}°</span>`;
+                hContainer.appendChild(card);
+            }
+
+            // Weekly
+            const wContainer = document.getElementById('weekly-container');
+            wContainer.innerHTML = '';
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const todayIdx = new Date().getDay();
+            for (let i = 0; i < 7; i++) {
+                const maxT = Math.round(isFahrenheit ? (dailyMaxC[i] * 9/5) + 32 : dailyMaxC[i]);
+                const minT = Math.round(isFahrenheit ? (dailyMinC[i] * 9/5) + 32 : dailyMinC[i]);
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between py-1.5 border-b border-white/10';
+                row.innerHTML = `<span class="w-16 font-semibold text-yellow-400">${i === 0 ? 'Today' : days[(todayIdx + i) % 7]}</span><span>${minT}°</span><div class="w-24 h-1.5 bg-white/10 rounded-full mx-2 overflow-hidden"><div class="bg-gradient-to-r from-red-500 to-yellow-400 h-full rounded-full" style="width: 70%"></div></div><span class="text-red-500 font-bold">${maxT}°</span>`;
+                wContainer.appendChild(row);
+            }
+        }
+
+        function toggleTempUnit() {
+            isFahrenheit = !isFahrenheit;
+            document.getElementById('unit-btn-text').innerText = isFahrenheit ? 'Switch to °C' : 'Switch to °F';
+            renderUI({
+                relative_humidity_2m: parseInt(document.getElementById('humidity').innerText),
+                wind_speed_10m: parseFloat(document.getElementById('wind').innerText),
+                surface_pressure: parseFloat(document.getElementById('pressure').innerText),
+                is_day: 1
+            });
+        }
+
+        const searchInput = document.getElementById('city-search');
+        const suggestionsBox = document.getElementById('suggestions-box');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+
+            fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5`)
+                .then(res => res.json())
+                .then(data => {
+                    suggestionsBox.innerHTML = '';
+                    if (data && data.results && data.results.length > 0) {
+                        data.results.forEach(loc => {
+                            const item = document.createElement('div');
+                            item.className = 'suggestion-item';
+                            const name = loc.admin1 ? `${loc.name}, ${loc.admin1}, ${loc.country}` : `${loc.name}, ${loc.country}`;
+                            item.innerText = name;
+                            item.onclick = () => {
+                                fetchWeather(loc.latitude, loc.longitude, name);
+                                searchInput.value = '';
+                                suggestionsBox.style.display = 'none';
+                            };
+                            suggestionsBox.appendChild(item);
+                        });
+                        suggestionsBox.style.display = 'block';
+                    } else {
+                        suggestionsBox.style.display = 'none';
+                    }
+                })
+                .catch(() => {
+                    suggestionsBox.style.display = 'none';
+                });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function triggerLiveGPS() {
+            document.getElementById('location-status').innerText = "📡 Locating...";
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+                    () => fetchWeather(23.7104, 90.4184, 'Swamibagh, Dhaka, Bangladesh'),
+                    { timeout: 4000, enableHighAccuracy: true }
+                );
+            } else {
+                fetchWeather(23.7104, 90.4184, 'Swamibagh, Dhaka, Bangladesh');
+            }
+        }
+
+        // INSTANT NON-BLOCKING STARTUP (Loads default Swamibagh instantly, then syncs GPS in background)
+        fetchWeather(23.7104, 90.4184, 'Swamibagh, Dhaka, Bangladesh');
+        
+        setTimeout(() => {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+                    () => {},
+                    { timeout: 5000, enableHighAccuracy: false }
+                );
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
